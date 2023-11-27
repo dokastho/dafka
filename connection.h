@@ -1,0 +1,4 @@
+#ifndef DAFKA_CONNECTIONS
+#define DAFKA_CONNECTIONS
+
+#endif
