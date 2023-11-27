@@ -31,4 +31,7 @@
 *.out
 *.app
 
+drpc.h
+Channel.h
 test_client
+test_basic

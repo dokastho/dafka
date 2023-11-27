@@ -23,16 +23,16 @@ debug: CXXFLAGS += -g3 -DDEBUG
 debug: clean all
 
 # highest target; sews together all objects into executable
-all: $(LIB) test_client
+all: $(LIB) test_basic
 
-final: clean $(LIB)
+final: clean headers $(LIB)
 	ln -f $(LIB) $(SO_PATH)
 
 $(LIB): $(OBJECTS)
 	$(CXX) $(CXXFLAGS) $(OBJECTS) -o $(LIB) $(SO_PATH)/$(RPC_LIB) -shared
 
 clean:
-	rm -f $(OBJECTS) $(EXECUTABLE) $(TESTS) $(PARTIAL_SUBMITFILE) $(FULL_SUBMITFILE) *.out test_client
+	rm -f $(OBJECTS) $(EXECUTABLE) $(TESTS) $(PARTIAL_SUBMITFILE) $(FULL_SUBMITFILE) *.out test_basic
 
 headers:
 	cp ../drpc/drpc.h .
@@ -41,9 +41,6 @@ headers:
 # test1: test1.cpp $(LIB)
 # 	$(CXX) $(CXXFLAGS) -o $@ $^
 test_basic: test_basic.cpp $(LIB) $(SO_PATH)/$(RPC_LIB) 
-	$(CXX) $(CXXFLAGS) -o $@ $^
-
-test_client: test_client.cpp $(LIB) $(SO_PATH)/$(RPC_LIB) 
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 # rule for creating objects
