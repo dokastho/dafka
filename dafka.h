@@ -63,20 +63,36 @@ public:
 
     // dafka host notifies all connections
     int notify_all(DafkaConnectionOp, payload &);
+
+    virtual int stub(dafka_args *) = 0;
 };
 
 // Persistent Dafka connection class
 class StrongDafkaConnection : public IDafkaConnection
 {
+private:
+    int notify(drpc_host &, DafkaConnectionOp, payload &);
+
+    friend class Subscriber;
+
 public:
     StrongDafkaConnection(drpc_host &, void *, void *, void *);
+
+    int stub(dafka_args *);
 };
 
 // Not persistent Dafka connection class
 class WeakDafkaConnection : public IDafkaConnection
 {
+private:
+    int notify(drpc_host &, DafkaConnectionOp, payload &);
+
+    friend class Subscriber;
+
 public:
     WeakDafkaConnection(drpc_host &, void *, void *, void *);
+
+    int stub(dafka_args *);
 };
 
 #endif

@@ -65,10 +65,10 @@ void IDafkaConnection::listen(IDafkaConnection *idc, drpc_msg &m)
         idc->remove_subscriber(da);
         break;
     case DafkaConnectionOp::REQUEST:
-        idc->req_endpoint(idc->srv_ptr, da->data.data);
+        idc->stub(da);
         break;
     case DafkaConnectionOp::REPLY:
-        idc->rep_endpoint(idc->srv_ptr, da->data.data);
+        idc->stub(da);
         break;
     
     default:

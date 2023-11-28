@@ -10,6 +10,8 @@ typedef std::chrono::seconds S;
 
 std::mutex __l;
 
+payload p{"sample data"};
+
 class Host
 {
 private:
@@ -26,7 +28,7 @@ public:
     {
         std::unique_lock<std::mutex>(__l);
         std::cout << "notifying subscribers" << std::endl;
-        sdc->notify_all();
+        sdc->notify_all(DafkaConnectionOp::REPLY, p);
     }
 
     static void req_fn(Host* srv, uint8_t* data)

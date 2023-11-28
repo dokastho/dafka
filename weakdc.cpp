@@ -16,3 +16,37 @@ WeakDafkaConnection::WeakDafkaConnection(
 {
     type = DafkaConnectionType::WEAK;
 }
+
+int WeakDafkaConnection::notify(drpc_host & remote, DafkaConnectionOp op, payload & data)
+{
+    drpc_client c;
+    dafka_reply r{ERR};
+    dafka_args da;
+
+    da.host = drpc_engine->get_host();
+    da.type = type;
+    da.op = op;
+    memcpy(da.data.data, data.data, DATA_LEN);
+
+    rpc_arg_wrapper req{(void *)&da, sizeof(da)};
+    rpc_arg_wrapper rep{(void *)&r, sizeof(r)};
+
+    return c.Call(remote, DAFKA_ENDPOINT, &req, &rep);
+}
+
+int WeakDafkaConnection::stub(dafka_args *args)
+{
+    switch (args->op)
+    {
+    case DafkaConnectionOp::REPLY:
+        rep_endpoint(srv_ptr, args->data.data);
+        break;
+
+    case DafkaConnectionOp::REQUEST:
+        req_endpoint(srv_ptr, args->data.data);
+        break;
+    default:
+        return 1;
+    }
+    return 0;
+}
