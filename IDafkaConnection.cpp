@@ -4,16 +4,8 @@
 #include "rpcs.h"
 #include "dafka.h"
 
-IDafkaConnection::IDafkaConnection(drpc_host &dh, void *srv_ptr_arg, std::string fn)
+IDafkaConnection::IDafkaConnection(drpc_host &dh)
 {
-    if (fn.size() > DAFKA_TARGET_FUNC_LEN)
-    {
-        throw std::runtime_error("Dafka function must not exceed buffer len");
-        exit(1);
-    }
-    
-    endpoint_name = fn;
-    srv_ptr = srv_ptr_arg;
     drpc_engine = new drpc_server(dh, this);
     drpc_engine->publish_endpoint(DAFKA_ENDPOINT, (void *)listen);
     drpc_engine->start();
@@ -65,7 +57,7 @@ int IDafkaConnection::subscribe(drpc_host & remote)
     {
         status = 0;
         r.status = ERR;
-        c.Call(remote, DAFKA_ENDPOINT, &req, &rep);
+        status = c.Call(remote, DAFKA_ENDPOINT, &req, &rep);
         if (status == 1)
         {
             r.status = ERR;

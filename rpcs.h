@@ -8,7 +8,6 @@
 #define OK 0
 #define ERR 1
 
-#define DAFKA_TARGET_FUNC_LEN 16
 #define DAFKA_ENDPOINT "Subscribe"
 
 // Enum type for Dafka connection identification

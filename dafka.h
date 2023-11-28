@@ -15,9 +15,6 @@ class IDafkaConnection
 protected:
     DafkaConnectionType type;
     std::vector<drpc_host> subscirbers;
-    std::string endpoint_name;
-    static void (*endpoint)(void *, drpc_msg &);
-    void *srv_ptr;
     drpc_server *drpc_engine;
     std::vector<int> seeds;
 
@@ -27,8 +24,9 @@ protected:
     }
 
 public:
-    IDafkaConnection(drpc_host &, void *, std::string);
-    ~IDafkaConnection();
+    IDafkaConnection(drpc_host &);
+
+    virtual ~IDafkaConnection();
 
     // dafka host receives subscription request
     static void listen(IDafkaConnection *, drpc_msg &);
@@ -46,20 +44,23 @@ public:
 };
 
 // Persistent Dafka connection class
-class StrongDafkaConnection : IDafkaConnection
+class StrongDafkaConnection : public IDafkaConnection
 {
 private:
-
 public:
+    StrongDafkaConnection(drpc_host &);
+
     int notify_one();
 
     int notify_all();
 };
 
 // Not persistent Dafka connection class
-class WeakDafkaConnection : IDafkaConnection
+class WeakDafkaConnection : public IDafkaConnection
 {
 public:
+    WeakDafkaConnection(drpc_host &);
+
     int notify_one();
 
     int notify_all();

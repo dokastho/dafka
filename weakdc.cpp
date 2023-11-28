@@ -2,6 +2,10 @@
 
 #include "dafka.h"
 
+WeakDafkaConnection::WeakDafkaConnection(drpc_host &my_host) : IDafkaConnection(my_host)
+{
+}
+
 int WeakDafkaConnection::notify_one()
 {
     return 0;

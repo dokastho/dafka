@@ -3,6 +3,9 @@
 
 #include "dafka.h"
 
+StrongDafkaConnection::StrongDafkaConnection(drpc_host &my_host) : IDafkaConnection(my_host)
+{
+}
 
 int StrongDafkaConnection::notify_one()
 {
