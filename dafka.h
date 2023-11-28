@@ -5,6 +5,7 @@
 #include <map>
 #include <string>
 #include <algorithm>
+#include <mutex>
 
 #include "drpc.h"
 #include "rpcs.h"
@@ -17,9 +18,11 @@ protected:
     std::vector<drpc_host> subscirbers;
     drpc_server *drpc_engine;
     std::vector<int> seeds;
+    std::mutex __l;
 
     bool knows_seed(int seed)
     {
+        std::unique_lock<std::mutex>(__l);
         return std::find(seeds.begin(), seeds.end(), seed) != seeds.end();
     }
 

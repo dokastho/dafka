@@ -44,8 +44,8 @@ int main()
     StrongDafkaConnection client3(dh);
     
     client1.subscribe(srv_host);
-    // client2.subscribe(srv_host);
-    // client3.subscribe(srv_host);
+    client2.subscribe(srv_host);
+    client3.subscribe(srv_host);
 
     srv.test_func();
     return 0;

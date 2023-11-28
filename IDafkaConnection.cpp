@@ -31,12 +31,15 @@ void IDafkaConnection::listen(IDafkaConnection *idc, drpc_msg &m)
         dr->status = OK;
         return;
     }
-
-    idc->subscirbers.push_back(da->host);
+    {
+        std::unique_lock<std::mutex>(__l);
+        idc->seeds.push_back(da->seed);
+        idc->subscirbers.push_back(da->host);
+    }
     dr->status = OK;
 }
 
-int IDafkaConnection::subscribe(drpc_host & remote)
+int IDafkaConnection::subscribe(drpc_host &remote)
 {
     drpc_client c;
     dafka_reply r{ERR};
@@ -47,10 +50,10 @@ int IDafkaConnection::subscribe(drpc_host & remote)
 
     da.host = drpc_engine->get_host();
     da.seed = rand();
-    da.type = DafkaConnectionType::STRONG;  // irrelevant; syntactic sugar for subscribe ops
+    da.type = DafkaConnectionType::STRONG; // irrelevant; syntactic sugar for subscribe ops
 
-    rpc_arg_wrapper req{(void*)&da, sizeof(da)};
-    rpc_arg_wrapper rep{(void*)&r, sizeof(r)};
+    rpc_arg_wrapper req{(void *)&da, sizeof(da)};
+    rpc_arg_wrapper rep{(void *)&r, sizeof(r)};
 
     int status;
     while (r.status != OK)
