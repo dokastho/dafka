@@ -1,10 +1,13 @@
 #ifndef DAFKA_RPCS
 #define DAFKA_RPCS
 
+#include <cstddef>
+
 #define OK 0;
 #define ERR 1;
 
-#define dafka_target_func_len 16
+#define DAFKA_TARGET_FUNC_LEN 16
+#define DAFKA_ENDPOINT "Subscribe"
 
 // Enum type for Dafka connection identification
 enum class DafkaConnectionType : char
@@ -31,7 +34,7 @@ struct dafka_reply
 struct subscribe_t
 {
     size_t len;
-    char target[dafka_target_func_len];
+    char target[DAFKA_TARGET_FUNC_LEN];
     void* args;
 };
 
