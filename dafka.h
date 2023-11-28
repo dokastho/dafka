@@ -1,7 +1,6 @@
 #ifndef DAFKA_CONNECTIONS
 #define DAFKA_CONNECTIONS
 
-#include <vector>
 #include <map>
 #include <string>
 #include <algorithm>
@@ -15,8 +14,11 @@ class IDafkaConnection
 {
 protected:
     DafkaConnectionType type;
-    std::vector<drpc_host> subscribers;
+    std::map<drpc_host, std::string> subscribers;
     drpc_server *drpc_engine;
+    void *srv_ptr;
+    static void (*req_endpoint)(void *, uint8_t *);
+    static void (*rep_endpoint)(void *, uint8_t *);
     std::vector<int> seeds;
     std::mutex __l;
 
@@ -26,8 +28,12 @@ protected:
         return std::find(seeds.begin(), seeds.end(), seed) != seeds.end();
     }
 
+    void add_subscriber(dafka_args *);
+
+    void remove_subscriber(dafka_args *);
+
 public:
-    IDafkaConnection(drpc_host &);
+    IDafkaConnection(drpc_host &, void *, void *, void *);
 
     virtual ~IDafkaConnection();
 
@@ -50,8 +56,10 @@ public:
 class StrongDafkaConnection : public IDafkaConnection
 {
 private:
+    int call_host(drpc_host &, DafkaConnectionOp, uint8_t *);
+
 public:
-    StrongDafkaConnection(drpc_host &);
+    StrongDafkaConnection(drpc_host &, void *, void *, void *);
 
     int notify_one();
 
@@ -61,8 +69,11 @@ public:
 // Not persistent Dafka connection class
 class WeakDafkaConnection : public IDafkaConnection
 {
+private:
+    int call_host(drpc_host &, DafkaConnectionOp, uint8_t *);
+
 public:
-    WeakDafkaConnection(drpc_host &);
+    WeakDafkaConnection(drpc_host &, void *, void *, void *);
 
     int notify_one();
 

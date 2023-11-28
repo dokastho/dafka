@@ -8,6 +8,7 @@
 #define OK 0
 #define ERR 1
 
+#define DATA_LEN 64
 #define DAFKA_ENDPOINT "Subscribe"
 
 // Enum type for Dafka connection identification
@@ -17,18 +18,31 @@ enum class DafkaConnectionType : char
     WEAK
 };
 
+enum class DafkaConnectionOp : char
+{
+    SUBSCRIBE,
+    UNSUBSCRIBE,
+    REQUEST,
+    REPLY
+};
+
 struct dafka_args
 {
-    void *data;
-    size_t data_len;
     int seed;
     drpc_host host;
     DafkaConnectionType type;
+    DafkaConnectionOp op;
+    uint8_t data[DATA_LEN];
 };
 
 struct dafka_reply
 {
     int status;
+};
+
+struct subscribe_args
+{
+    char reply_endpoint[DATA_LEN];
 };
 
 #endif

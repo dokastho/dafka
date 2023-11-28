@@ -17,13 +17,23 @@ class Server
     public:
     Server()
     {
-        sdc = new StrongDafkaConnection(srv_host);
+        sdc = new StrongDafkaConnection(srv_host, this, (void*)req_fn, (void*)rep_fn);
     }
 
     void test_func()
     {
         std::cout << "notifying subscribers" << std::endl;
         sdc->notify_all();
+    }
+
+    static void req_fn(Server* srv, uint8_t* data)
+    {
+
+    }
+    
+    static void rep_fn(Server* srv, uint8_t* data)
+    {
+        
     }
 
     ~Server()

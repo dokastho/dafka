@@ -4,8 +4,11 @@
 #include "rpcs.h"
 #include "dafka.h"
 
-IDafkaConnection::IDafkaConnection(drpc_host &dh)
+IDafkaConnection::IDafkaConnection(drpc_host &dh, void* my_srv_ptr, void* req_endpoint_ptr, void* rep_endpoint_ptr)
 {
+    srv_ptr = my_srv_ptr;
+    req_endpoint = (void (*)(void *, uint8_t *))req_endpoint_ptr;
+    rep_endpoint = (void (*)(void *, uint8_t *))rep_endpoint_ptr;
     drpc_engine = new drpc_server(dh, this);
     drpc_engine->publish_endpoint(DAFKA_ENDPOINT, (void *)listen);
     drpc_engine->start();
@@ -19,6 +22,32 @@ IDafkaConnection::~IDafkaConnection()
     delete drpc_engine;
 }
 
+void IDafkaConnection::add_subscriber(dafka_args *da)
+{
+    if (knows_seed(da->seed))
+    {
+        return;
+    }
+    {
+        std::unique_lock<std::mutex>(__l);
+        seeds.push_back(da->seed);
+        subscribers[da->host] = (char*)da->data;
+    }
+}
+
+void IDafkaConnection::remove_subscriber(dafka_args *da)
+{
+    if (knows_seed(da->seed))
+    {
+        return;
+    }
+    {
+        std::unique_lock<std::mutex>(__l);
+        seeds.push_back(da->seed);
+        subscribers.erase(da->host);
+    }
+}
+
 void IDafkaConnection::listen(IDafkaConnection *idc, drpc_msg &m)
 {
     // args
@@ -26,16 +55,25 @@ void IDafkaConnection::listen(IDafkaConnection *idc, drpc_msg &m)
     // reply
     dafka_reply *dr = (dafka_reply *)m.rep->args;
 
-    if (idc->knows_seed(da->seed))
+    switch (da->op)
     {
-        dr->status = OK;
+    case DafkaConnectionOp::SUBSCRIBE:
+        idc->add_subscriber(da);
+        break;
+    case DafkaConnectionOp::UNSUBSCRIBE:
+        idc->remove_subscriber(da);
+        break;
+    case DafkaConnectionOp::REQUEST:
+        idc->req_endpoint(idc->srv_ptr, da->data);
+        break;
+    case DafkaConnectionOp::REPLY:
+        idc->rep_endpoint(idc->srv_ptr, da->data);
+        break;
+    
+    default:
         return;
     }
-    {
-        std::unique_lock<std::mutex>(__l);
-        idc->seeds.push_back(da->seed);
-        idc->subscribers.push_back(da->host);
-    }
+    
     dr->status = OK;
 }
 
@@ -44,9 +82,6 @@ int IDafkaConnection::subscribe(drpc_host &remote)
     drpc_client c;
     dafka_reply r{ERR};
     dafka_args da;
-
-    da.data_len = 0;
-    da.data = malloc(da.data_len);
 
     da.host = drpc_engine->get_host();
     da.seed = rand();
