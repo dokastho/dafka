@@ -32,7 +32,7 @@ struct dafka_args
     drpc_host host;
     DafkaConnectionType type;
     DafkaConnectionOp op;
-    uint8_t data[DATA_LEN];
+    payload data;
 };
 
 struct dafka_reply
@@ -40,9 +40,9 @@ struct dafka_reply
     int status;
 };
 
-struct subscribe_args
+struct payload
 {
-    char reply_endpoint[DATA_LEN];
+    uint8_t data[DATA_LEN];
 };
 
 #endif

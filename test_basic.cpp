@@ -1,42 +1,47 @@
 #include <thread>
 #include <chrono>
 #include <iostream>
+#include <mutex>
 
 #include "dafka.h"
 #include "drpc.h"
 
 typedef std::chrono::seconds S;
 
-drpc_host srv_host{"localhost", 8555};
+std::mutex __l;
 
-class Server
+class Host
 {
-    private:
+private:
+    int me = 0;
+public:
     StrongDafkaConnection *sdc;
-    bool do_notify = false;
-    public:
-    Server()
+    Host(drpc_host h, int id)
     {
-        sdc = new StrongDafkaConnection(srv_host, this, (void*)req_fn, (void*)rep_fn);
+        sdc = new StrongDafkaConnection(h, this, (void*)req_fn, (void*)rep_fn);
+        me = id;
     }
 
     void test_func()
     {
+        std::unique_lock<std::mutex>(__l);
         std::cout << "notifying subscribers" << std::endl;
         sdc->notify_all();
     }
 
-    static void req_fn(Server* srv, uint8_t* data)
+    static void req_fn(Host* srv, uint8_t* data)
     {
-
+        std::unique_lock<std::mutex>(__l);
+        std::cout << srv->me << " was requested" << std::endl;
     }
     
-    static void rep_fn(Server* srv, uint8_t* data)
+    static void rep_fn(Host* srv, uint8_t* data)
     {
-        
+        std::unique_lock<std::mutex>(__l);
+        std::cout << srv->me << " was notified" << std::endl;
     }
 
-    ~Server()
+    ~Host()
     {
         delete sdc;
     }
@@ -45,18 +50,19 @@ class Server
 
 int main()
 {
-    Server srv;
-
+    std::vector<Host> hosts;
+    drpc_host srv_host{"localhost", 8555};
+    hosts.emplace_back(Host(srv_host, 0));
     drpc_host dh{"localhost", 0};
-    // create some clients
-    StrongDafkaConnection client1(dh);
-    StrongDafkaConnection client2(dh);
-    StrongDafkaConnection client3(dh);
-    
-    client1.subscribe(srv_host);
-    client2.subscribe(srv_host);
-    client3.subscribe(srv_host);
+    size_t nhosts = 5;
+    // create some other hosts
+    for (int i = 1; i < nhosts; i++)
+    {
+        hosts.emplace_back(Host(dh, i));
+        hosts.back().sdc->subscribe(srv_host);
+    }
 
-    srv.test_func();
+    hosts.front().test_func();
+    
     return 0;
 }

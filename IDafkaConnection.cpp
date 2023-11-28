@@ -31,7 +31,8 @@ void IDafkaConnection::add_subscriber(dafka_args *da)
     {
         std::unique_lock<std::mutex>(__l);
         seeds.push_back(da->seed);
-        subscribers[da->host] = (char*)da->data;
+        Subscriber s(da->host);
+        subscribers.push_back(s);
     }
 }
 
@@ -44,7 +45,7 @@ void IDafkaConnection::remove_subscriber(dafka_args *da)
     {
         std::unique_lock<std::mutex>(__l);
         seeds.push_back(da->seed);
-        subscribers.erase(da->host);
+        subscribers.erase(std::find(subscribers.begin(), subscribers.end(), da->host));
     }
 }
 
@@ -64,10 +65,10 @@ void IDafkaConnection::listen(IDafkaConnection *idc, drpc_msg &m)
         idc->remove_subscriber(da);
         break;
     case DafkaConnectionOp::REQUEST:
-        idc->req_endpoint(idc->srv_ptr, da->data);
+        idc->req_endpoint(idc->srv_ptr, da->data.data);
         break;
     case DafkaConnectionOp::REPLY:
-        idc->rep_endpoint(idc->srv_ptr, da->data);
+        idc->rep_endpoint(idc->srv_ptr, da->data.data);
         break;
     
     default:
@@ -100,6 +101,29 @@ int IDafkaConnection::subscribe(drpc_host &remote)
         {
             r.status = ERR;
         }
+    }
+    return 0;
+}
+
+int IDafkaConnection::notify_one(DafkaConnectionOp op, payload &p, int index)
+{
+    if (index > subscribers.size())
+    {
+        throw std::runtime_error("Index invalid");
+        exit(1);
+    }
+    
+    Subscriber sub = subscribers[index];
+    
+    sub.notify(this, op, p.data);
+    return 0;
+}
+
+int IDafkaConnection::notify_all(DafkaConnectionOp op, payload &p)
+{
+    for (Subscriber sub : subscribers)
+    {
+        sub.notify(this, op, p.data);
     }
     return 0;
 }
