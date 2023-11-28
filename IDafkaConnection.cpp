@@ -34,7 +34,7 @@ void IDafkaConnection::listen(IDafkaConnection *idc, drpc_msg &m)
     {
         std::unique_lock<std::mutex>(__l);
         idc->seeds.push_back(da->seed);
-        idc->subscirbers.push_back(da->host);
+        idc->subscribers.push_back(da->host);
     }
     dr->status = OK;
 }

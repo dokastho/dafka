@@ -15,7 +15,7 @@ class IDafkaConnection
 {
 protected:
     DafkaConnectionType type;
-    std::vector<drpc_host> subscirbers;
+    std::vector<drpc_host> subscribers;
     drpc_server *drpc_engine;
     std::vector<int> seeds;
     std::mutex __l;
