@@ -2,10 +2,17 @@
 #include <netdb.h>
 
 #include "rpcs.h"
-#include "connection.h"
+#include "dafka.h"
 
-IDafkaConnection::IDafkaConnection(drpc_host &dh, void *srv_ptr_arg)
+IDafkaConnection::IDafkaConnection(drpc_host &dh, void *srv_ptr_arg, std::string fn)
 {
+    if (fn.size() > DAFKA_TARGET_FUNC_LEN)
+    {
+        throw std::runtime_error("Dafka function must not exceed buffer len");
+        exit(1);
+    }
+    
+    endpoint_name = fn;
     srv_ptr = srv_ptr_arg;
     drpc_engine = new drpc_server(dh, this);
     drpc_engine->publish_endpoint(DAFKA_ENDPOINT, (void *)listen);
@@ -24,30 +31,45 @@ void IDafkaConnection::listen(IDafkaConnection *idc, drpc_msg &m)
 {
     // args
     dafka_args *da = (dafka_args *)m.req->args;
-    subscribe_t *s = (subscribe_t *)malloc(da->data_len);
-    memcpy(s, da->data, da->data_len);
     // reply
-    dafka_reply *dr = (dafka_reply *)m.rep->args;;
-    // host
-    drpc_host d{"", 0};
+    dafka_reply *dr = (dafka_reply *)m.rep->args;
 
-    // struct hostent *gethostbyaddr()
-
-    StrongDafkaConnection *sdc_ptr;
-    WeakDafkaConnection *wdc_ptr;
-
-    switch (idc->type)
+    if (idc->knows_seed(da->seed))
     {
-    case DafkaConnectionType::STRONG:
-        sdc_ptr = dynamic_cast<StrongDafkaConnection *>(idc);
-        sdc_ptr->add_subscriber(d, s, dr, da->seed);
-        break;
-
-    case DafkaConnectionType::WEAK:
-        wdc_ptr = dynamic_cast<WeakDafkaConnection *>(idc);
-        wdc_ptr->add_subscriber(d, s, dr);
-        break;
+        dr->status = OK;
+        return;
     }
 
-    free(s);
+    idc->subscirbers.push_back(da->host);
+    dr->status = OK;
+}
+
+int IDafkaConnection::subscribe(drpc_host & remote)
+{
+    drpc_client c;
+    dafka_reply r{ERR};
+    dafka_args da;
+
+    da.data_len = 0;
+    da.data = malloc(da.data_len);
+
+    da.host = drpc_engine->get_host();
+    da.seed = rand();
+    da.type = DafkaConnectionType::STRONG;  // irrelevant; syntactic sugar for subscribe ops
+
+    rpc_arg_wrapper req{(void*)&da, sizeof(da)};
+    rpc_arg_wrapper rep{(void*)&r, sizeof(r)};
+
+    int status;
+    while (r.status != OK)
+    {
+        status = 0;
+        r.status = ERR;
+        c.Call(remote, DAFKA_ENDPOINT, &req, &rep);
+        if (status == 1)
+        {
+            r.status = ERR;
+        }
+    }
+    return 0;
 }

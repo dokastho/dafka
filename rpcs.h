@@ -3,8 +3,10 @@
 
 #include <cstddef>
 
-#define OK 0;
-#define ERR 1;
+#include "drpc.h"
+
+#define OK 0
+#define ERR 1
 
 #define DAFKA_TARGET_FUNC_LEN 16
 #define DAFKA_ENDPOINT "Subscribe"
@@ -21,21 +23,13 @@ struct dafka_args
     void *data;
     size_t data_len;
     int seed;
-    int addr;
-    short port;
+    drpc_host host;
     DafkaConnectionType type;
 };
 
 struct dafka_reply
 {
     int status;
-};
-
-struct subscribe_t
-{
-    size_t len;
-    char target[DAFKA_TARGET_FUNC_LEN];
-    void* args;
 };
 
 #endif

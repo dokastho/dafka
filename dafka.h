@@ -15,12 +15,19 @@ class IDafkaConnection
 protected:
     DafkaConnectionType type;
     std::vector<drpc_host> subscirbers;
+    std::string endpoint_name;
     static void (*endpoint)(void *, drpc_msg &);
     void *srv_ptr;
     drpc_server *drpc_engine;
+    std::vector<int> seeds;
+
+    bool knows_seed(int seed)
+    {
+        return std::find(seeds.begin(), seeds.end(), seed) != seeds.end();
+    }
 
 public:
-    IDafkaConnection(drpc_host &, void *);
+    IDafkaConnection(drpc_host &, void *, std::string);
     ~IDafkaConnection();
 
     // dafka host receives subscription request
@@ -29,7 +36,7 @@ public:
     // dafka host subscribes to another's endpoint
     // note to self: setting function = 0 denotes it as pure virtual.
     // Can maintain as virtual if not = 0
-    virtual int subscribe() = 0;
+    int subscribe(drpc_host &);
 
     // dafka host notifies one connection
     virtual int notify_one() = 0;
@@ -42,18 +49,8 @@ public:
 class StrongDafkaConnection : IDafkaConnection
 {
 private:
-    std::vector<int> seeds;
-
-    bool knows_seed(int seed)
-    {
-        return std::find(seeds.begin(), seeds.end(), seed) != seeds.end();
-    }
 
 public:
-    int subscribe();
-
-    void add_subscriber(drpc_host &, subscribe_t *, dafka_reply *, int);
-
     int notify_one();
 
     int notify_all();
@@ -63,10 +60,6 @@ public:
 class WeakDafkaConnection : IDafkaConnection
 {
 public:
-    int subscribe();
-
-    void add_subscriber(drpc_host &, subscribe_t *, dafka_reply *);
-
     int notify_one();
 
     int notify_all();
