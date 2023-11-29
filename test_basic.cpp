@@ -10,7 +10,7 @@ typedef std::chrono::seconds S;
 
 std::mutex __l;
 
-payload p{"sample"};
+payload_t p{"sample"};
 
 class Host
 {

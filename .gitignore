@@ -31,6 +31,8 @@
 *.out
 *.app
 
+__pycache__
+
 drpc.h
 Channel.h
 test_client
