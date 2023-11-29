@@ -26,6 +26,11 @@ enum class DafkaConnectionOp : char
     REPLY
 };
 
+struct payload
+{
+    uint8_t data[DATA_LEN];
+};
+
 struct dafka_args
 {
     int seed;
@@ -38,11 +43,6 @@ struct dafka_args
 struct dafka_reply
 {
     int status;
-};
-
-struct payload
-{
-    uint8_t data[DATA_LEN];
 };
 
 #endif

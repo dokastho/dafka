@@ -36,7 +36,7 @@ int StrongDafkaConnection::notify(drpc_host & remote, DafkaConnectionOp op, payl
     int status;
     while (r.status != OK)
     {
-        status = 0;
+        status = 1;
         r.status = ERR;
         status = c.Call(remote, DAFKA_ENDPOINT, &req, &rep);
         if (status == 1)
@@ -44,6 +44,7 @@ int StrongDafkaConnection::notify(drpc_host & remote, DafkaConnectionOp op, payl
             r.status = ERR;
         }
     }
+    return 0;
 }
 
 int StrongDafkaConnection::stub(dafka_args *args)

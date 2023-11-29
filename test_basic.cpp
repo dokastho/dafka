@@ -16,31 +16,32 @@ class Host
 {
 private:
     int me = 0;
+
 public:
     StrongDafkaConnection *sdc;
     Host(drpc_host h, int id)
     {
-        sdc = new StrongDafkaConnection(h, this, (void*)req_fn, (void*)rep_fn);
+        sdc = new StrongDafkaConnection(h, this, (void *)req_fn, (void *)rep_fn);
         me = id;
     }
 
     void test_func()
     {
-        std::unique_lock<std::mutex>(__l);
+        std::unique_lock<std::mutex> l(__l);
         std::cout << "notifying subscribers" << std::endl;
         sdc->notify_all(DafkaConnectionOp::REPLY, p);
     }
 
-    static void req_fn(Host* srv, uint8_t* data)
+    static void req_fn(Host *srv, uint8_t *data)
     {
-        std::unique_lock<std::mutex>(__l);
-        std::cout << srv->me << " was requested" << std::endl;
+        std::unique_lock<std::mutex> l(__l);
+        std::cout << srv->me << " was requested. has data " << data << std::endl;
     }
-    
-    static void rep_fn(Host* srv, uint8_t* data)
+
+    static void rep_fn(Host *srv, uint8_t *data)
     {
-        std::unique_lock<std::mutex>(__l);
-        std::cout << srv->me << " was notified" << std::endl;
+        std::unique_lock<std::mutex> l(__l);
+        std::cout << srv->me << " was notified. has data " << data << std::endl;
     }
 
     ~Host()
@@ -49,22 +50,19 @@ public:
     }
 };
 
-
 int main()
 {
-    std::vector<Host> hosts;
     drpc_host srv_host{"localhost", 8555};
-    hosts.emplace_back(Host(srv_host, 0));
     drpc_host dh{"localhost", 0};
-    size_t nhosts = 5;
-    // create some other hosts
-    for (int i = 1; i < nhosts; i++)
-    {
-        hosts.emplace_back(Host(dh, i));
-        hosts.back().sdc->subscribe(srv_host);
-    }
+    Host srv(srv_host, 0);
+    Host h1(dh, 1);
+    // Host h2(dh, 1);
+    // Host h3(dh, 1);
 
-    hosts.front().test_func();
-    
+    h1.sdc->subscribe(srv_host);
+    // h2.sdc->subscribe(srv_host);
+    // h3.sdc->subscribe(srv_host);
+
+    srv.test_func();
     return 0;
 }

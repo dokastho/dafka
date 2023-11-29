@@ -9,6 +9,8 @@
 #include "drpc.h"
 #include "rpcs.h"
 
+class IDafkaConnection;
+
 class Subscriber
 {
 private:
@@ -16,6 +18,11 @@ private:
 
 public:
     Subscriber(drpc_host &);
+
+    bool operator==(Subscriber rhs)
+    {
+        return rhs.host.port == host.port && rhs.host.hostname == host.hostname;
+    }
 
     int notify(IDafkaConnection *, DafkaConnectionOp, uint8_t *);
 };
@@ -28,14 +35,14 @@ protected:
     std::vector<Subscriber> subscribers;
     drpc_server *drpc_engine;
     void *srv_ptr;
-    static void (*req_endpoint)(void *, uint8_t *);
-    static void (*rep_endpoint)(void *, uint8_t *);
+    void (*req_endpoint)(void *, uint8_t *);
+    void (*rep_endpoint)(void *, uint8_t *);
     std::vector<int> seeds;
     std::mutex __l;
 
     bool knows_seed(int seed)
     {
-        std::unique_lock<std::mutex>(__l);
+        std::unique_lock<std::mutex> l(__l);
         return std::find(seeds.begin(), seeds.end(), seed) != seeds.end();
     }
 

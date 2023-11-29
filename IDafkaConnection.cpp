@@ -4,6 +4,33 @@
 #include "rpcs.h"
 #include "dafka.h"
 
+Subscriber::Subscriber(drpc_host &dh) : host(dh) {}
+
+int Subscriber::notify(IDafkaConnection *idc, DafkaConnectionOp op, uint8_t *data)
+{
+    payload p;
+    memcpy(p.data, data, DATA_LEN);
+
+    StrongDafkaConnection *sdc_ptr;
+    WeakDafkaConnection *wdc_ptr;
+    switch (idc->type)
+    {
+    case DafkaConnectionType::STRONG:
+        sdc_ptr = dynamic_cast<StrongDafkaConnection*>(idc);
+        sdc_ptr->notify(host, op, p);
+        break;
+
+    case DafkaConnectionType::WEAK:
+        wdc_ptr = dynamic_cast<WeakDafkaConnection*>(idc);
+        wdc_ptr->notify(host, op, p);
+        break;
+    
+    default:
+        return 1;
+    }
+    return 0;
+}
+
 IDafkaConnection::IDafkaConnection(drpc_host &dh, void* my_srv_ptr, void* req_endpoint_ptr, void* rep_endpoint_ptr)
 {
     srv_ptr = my_srv_ptr;
@@ -29,7 +56,7 @@ void IDafkaConnection::add_subscriber(dafka_args *da)
         return;
     }
     {
-        std::unique_lock<std::mutex>(__l);
+        std::unique_lock<std::mutex> l(__l);
         seeds.push_back(da->seed);
         Subscriber s(da->host);
         subscribers.push_back(s);
@@ -43,9 +70,10 @@ void IDafkaConnection::remove_subscriber(dafka_args *da)
         return;
     }
     {
-        std::unique_lock<std::mutex>(__l);
+        std::unique_lock<std::mutex> l(__l);
         seeds.push_back(da->seed);
-        subscribers.erase(std::find(subscribers.begin(), subscribers.end(), da->host));
+        Subscriber s(da->host);
+        subscribers.erase(std::find(subscribers.begin(), subscribers.end(), s));
     }
 }
 
@@ -107,7 +135,7 @@ int IDafkaConnection::subscribe(drpc_host &remote)
 
 int IDafkaConnection::notify_one(DafkaConnectionOp op, payload &p, int index)
 {
-    if (index > subscribers.size())
+    if (index > (int)subscribers.size())
     {
         throw std::runtime_error("Index invalid");
         exit(1);
