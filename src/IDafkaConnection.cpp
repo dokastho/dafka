@@ -16,15 +16,15 @@ int Subscriber::notify(IDafkaConnection *idc, DafkaConnectionOp op, uint8_t *dat
     switch (idc->type)
     {
     case DafkaConnectionType::STRONG:
-        sdc_ptr = dynamic_cast<StrongDafkaConnection*>(idc);
+        sdc_ptr = dynamic_cast<StrongDafkaConnection *>(idc);
         sdc_ptr->notify(host, op, p);
         break;
 
     case DafkaConnectionType::WEAK:
-        wdc_ptr = dynamic_cast<WeakDafkaConnection*>(idc);
+        wdc_ptr = dynamic_cast<WeakDafkaConnection *>(idc);
         wdc_ptr->notify(host, op, p);
         break;
-    
+
     default:
         return 1;
     }
@@ -41,7 +41,7 @@ drpc_host Subscriber::get_host()
     return host;
 }
 
-IDafkaConnection::IDafkaConnection(drpc_host &dh, void* my_srv_ptr, void* req_endpoint_ptr, void* rep_endpoint_ptr)
+IDafkaConnection::IDafkaConnection(drpc_host &dh, void *my_srv_ptr, void *req_endpoint_ptr, void *rep_endpoint_ptr)
 {
     srv_ptr = my_srv_ptr;
     req_endpoint = (void (*)(void *, uint8_t *))req_endpoint_ptr;
@@ -72,31 +72,31 @@ std::vector<drpc_host> IDafkaConnection::get_subscriber_hosts()
     {
         hosts.push_back(s.get_host());
     }
-    
+
     return hosts;
 }
 
 bool IDafkaConnection::has_subscriber(Subscriber &s)
 {
-    std::unique_lock<std::mutex> l(__l);
     return std::find(subscribers.begin(), subscribers.end(), s) != subscribers.end();
 }
 
 void IDafkaConnection::add_subscriber(dafka_args *da)
 {
-    std::unique_lock<std::mutex> l(__l);
-    if (knows_seed(da->seed))
     {
-        return;
+        std::unique_lock<std::mutex> l(__l);
+        if (knows_seed(da->seed))
+        {
+            return;
+        }
+        seeds.push_back(da->seed);
+        Subscriber s(da->host);
+        if (has_subscriber(s))
+        {
+            return;
+        }
+        subscribers.push_back(s);
     }
-    seeds.push_back(da->seed);
-    Subscriber s(da->host);
-    if (has_subscriber(s))
-    {
-        return;
-    }
-    subscribers.push_back(s);
-    
     // invoke request function after adding subscriber
     req_endpoint(srv_ptr, da->payload.data);
 }
@@ -135,17 +135,17 @@ void IDafkaConnection::listen(IDafkaConnection *idc, drpc_msg &m)
     case DafkaConnectionOp::REPLY:
         idc->stub(da);
         break;
-    
+
     default:
         return;
     }
-    
+
     dr->status = OK;
 }
 
 int IDafkaConnection::subscribe(drpc_host &remote, payload_t &payload)
 {
-    StrongDafkaConnection *sdc_ptr = dynamic_cast<StrongDafkaConnection*>(this);
+    StrongDafkaConnection *sdc_ptr = dynamic_cast<StrongDafkaConnection *>(this);
     sdc_ptr->type = DafkaConnectionType::STRONG;
     Subscriber rs(remote);
     rs.notify(sdc_ptr, DafkaConnectionOp::SUBSCRIBE, payload.data);
@@ -159,9 +159,9 @@ int IDafkaConnection::notify_one(DafkaConnectionOp op, payload_t &p, int index)
         throw std::runtime_error("Index invalid");
         exit(1);
     }
-    
+
     Subscriber sub = subscribers[index];
-    
+
     sub.notify(this, op, p.data);
     return 0;
 }

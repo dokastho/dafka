@@ -10,7 +10,7 @@
 
 typedef std::chrono::milliseconds MS;
 
-std::mutex __l;
+std::mutex lock;
 
 payload_t p{"sample"};
 
@@ -30,7 +30,6 @@ public:
 
     void subscribe_func(drpc_host &remote)
     {
-        std::unique_lock<std::mutex> l(__l);
 
         Subscriber rs(remote);
 
@@ -45,6 +44,7 @@ public:
 
         sdc->subscribe(remote, payload);
 
+        std::unique_lock<std::mutex> l(lock);
         if (std::find(pool.begin(), pool.end(), remote) != pool.end())
         {
             return;
@@ -65,10 +65,7 @@ public:
 
     static void req_fn(GossipingHost *srv, uint8_t *data)
     {
-        {
-            std::unique_lock<std::mutex> l(__l);
-            std::cout << srv->me << " subscribing in exchange..." << std::endl;
-        }
+        std::cout << srv->me << " subscribing in exchange..." << std::endl;
         drpc_host dh;
         memcpy(&dh, data, sizeof(dh));
         srv->subscribe_func(dh);
@@ -76,7 +73,6 @@ public:
 
     static void rep_fn(GossipingHost *srv, uint8_t *data)
     {
-        std::unique_lock<std::mutex> l(__l);
         std::cout << srv->me << " was notified. adding new hosts to my pool..." << data << std::endl;
 
         drpc_host host;
