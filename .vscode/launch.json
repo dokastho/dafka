@@ -8,7 +8,7 @@
             "name": "DMS Server",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/${fileBasenameNoExtension}",
+            "program": "${workspaceFolder}/bin/${fileBasenameNoExtension}",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

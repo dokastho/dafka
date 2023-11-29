@@ -111,7 +111,7 @@ int IDafkaConnection::subscribe(drpc_host &remote)
     StrongDafkaConnection *sdc_ptr = dynamic_cast<StrongDafkaConnection*>(this);
     sdc_ptr->type = DafkaConnectionType::STRONG;
     Subscriber rs(remote);
-    rs.notify(sdc_ptr, DafkaConnectionOp::SUBSCRIBE, {});
+    rs.notify(sdc_ptr, DafkaConnectionOp::SUBSCRIBE, payload_t{}.data);
     return 0;
 }
 
