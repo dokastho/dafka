@@ -108,29 +108,10 @@ void IDafkaConnection::listen(IDafkaConnection *idc, drpc_msg &m)
 
 int IDafkaConnection::subscribe(drpc_host &remote)
 {
-    drpc_client c;
-    dafka_reply r{ERR};
-    dafka_args da;
-
-    da.host = drpc_engine->get_host();
-    da.seed = rand();
-    da.type = DafkaConnectionType::STRONG; // irrelevant; syntactic sugar for subscribe ops
-    da.op = DafkaConnectionOp::SUBSCRIBE;
-
-    rpc_arg_wrapper req{(void *)&da, sizeof(da)};
-    rpc_arg_wrapper rep{(void *)&r, sizeof(r)};
-
-    int status;
-    while (r.status != OK)
-    {
-        status = 1;
-        r.status = ERR;
-        status = c.Call(remote, DAFKA_ENDPOINT, &req, &rep);
-        if (status == 1)
-        {
-            r.status = ERR;
-        }
-    }
+    StrongDafkaConnection *sdc_ptr = dynamic_cast<StrongDafkaConnection*>(this);
+    sdc_ptr->type = DafkaConnectionType::STRONG;
+    Subscriber rs(remote);
+    rs.notify(sdc_ptr, DafkaConnectionOp::SUBSCRIBE, {});
     return 0;
 }
 

@@ -1,7 +1,7 @@
 SRCDIR   = src
 OBJDIR   = obj
 BINDIR   = bin
-TESTDIR	 = test
+TESTDIR	 = pytest
 
 # list of test drivers (with main()) for development
 TESTSOURCES = $(wildcard ${SRCDIR}/test*.cpp)
