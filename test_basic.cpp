@@ -10,7 +10,7 @@ typedef std::chrono::seconds S;
 
 std::mutex __l;
 
-payload p{"sample data"};
+payload p{"sample"};
 
 class Host
 {
@@ -27,7 +27,6 @@ public:
 
     void test_func()
     {
-        std::unique_lock<std::mutex> l(__l);
         std::cout << "notifying subscribers" << std::endl;
         sdc->notify_all(DafkaConnectionOp::REPLY, p);
     }
@@ -56,12 +55,12 @@ int main()
     drpc_host dh{"localhost", 0};
     Host srv(srv_host, 0);
     Host h1(dh, 1);
-    // Host h2(dh, 1);
-    // Host h3(dh, 1);
+    Host h2(dh, 2);
+    Host h3(dh, 3);
 
     h1.sdc->subscribe(srv_host);
-    // h2.sdc->subscribe(srv_host);
-    // h3.sdc->subscribe(srv_host);
+    h2.sdc->subscribe(srv_host);
+    h3.sdc->subscribe(srv_host);
 
     srv.test_func();
     return 0;

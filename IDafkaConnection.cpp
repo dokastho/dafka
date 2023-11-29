@@ -115,6 +115,7 @@ int IDafkaConnection::subscribe(drpc_host &remote)
     da.host = drpc_engine->get_host();
     da.seed = rand();
     da.type = DafkaConnectionType::STRONG; // irrelevant; syntactic sugar for subscribe ops
+    da.op = DafkaConnectionOp::SUBSCRIBE;
 
     rpc_arg_wrapper req{(void *)&da, sizeof(da)};
     rpc_arg_wrapper rep{(void *)&r, sizeof(r)};
@@ -122,7 +123,7 @@ int IDafkaConnection::subscribe(drpc_host &remote)
     int status;
     while (r.status != OK)
     {
-        status = 0;
+        status = 1;
         r.status = ERR;
         status = c.Call(remote, DAFKA_ENDPOINT, &req, &rep);
         if (status == 1)
