@@ -1,9 +1,11 @@
 import os
 import pytest
 
+BINDIR = "./bin"
+
 
 @pytest.fixture(autouse=True)
 def run_around_tests():
-    os.environ['LD_LIBRARY_PATH'] = '/home/dokastho/code/dafka'
+    os.environ['LD_LIBRARY_PATH'] = '/home/dokastho/code/dafka/obj'
     os.system('make all')
     yield

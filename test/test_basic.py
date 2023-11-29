@@ -1,4 +1,5 @@
 import os
+from conftest import BINDIR
 
 
 def run_command(cmd: str):
@@ -7,6 +8,6 @@ def run_command(cmd: str):
 
 
 def test_basic():
-    cmd = './test_basic'
+    cmd = f'{BINDIR}/test_basic'
     assert(run_command(cmd) == 0)
     pass
