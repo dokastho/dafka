@@ -19,10 +19,9 @@ private:
 public:
     Subscriber(drpc_host &);
 
-    bool operator==(Subscriber rhs)
-    {
-        return rhs.host.port == host.port && rhs.host.hostname == host.hostname;
-    }
+    bool operator==(Subscriber rhs);
+    
+    drpc_host get_host();
 
     int notify(IDafkaConnection *, DafkaConnectionOp, uint8_t *);
 };
@@ -42,7 +41,6 @@ protected:
 
     bool knows_seed(int seed)
     {
-        std::unique_lock<std::mutex> l(__l);
         return std::find(seeds.begin(), seeds.end(), seed) != seeds.end();
     }
 
@@ -63,7 +61,7 @@ public:
     // dafka host subscribes to another's endpoint
     // note to self: setting function = 0 denotes it as pure virtual.
     // Can maintain as virtual if not = 0
-    int subscribe(drpc_host &);
+    int subscribe(drpc_host &, payload_t &);
 
     // dafka host notifies one connection
     int notify_one(DafkaConnectionOp, payload_t &, int);
@@ -72,6 +70,12 @@ public:
     int notify_all(DafkaConnectionOp, payload_t &);
 
     virtual int stub(dafka_args *) = 0;
+
+    drpc_host get_host();
+
+    std::vector<drpc_host> get_subscriber_hosts();
+
+    bool has_subscriber(Subscriber &);
 };
 
 // Persistent Dafka connection class

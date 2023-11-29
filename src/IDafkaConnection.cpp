@@ -31,6 +31,16 @@ int Subscriber::notify(IDafkaConnection *idc, DafkaConnectionOp op, uint8_t *dat
     return 0;
 }
 
+bool Subscriber::operator==(Subscriber rhs)
+{
+    return rhs.host == host;
+}
+
+drpc_host Subscriber::get_host()
+{
+    return host;
+}
+
 IDafkaConnection::IDafkaConnection(drpc_host &dh, void* my_srv_ptr, void* req_endpoint_ptr, void* rep_endpoint_ptr)
 {
     srv_ptr = my_srv_ptr;
@@ -49,32 +59,58 @@ IDafkaConnection::~IDafkaConnection()
     delete drpc_engine;
 }
 
+drpc_host IDafkaConnection::get_host()
+{
+    return drpc_engine->get_host();
+}
+
+std::vector<drpc_host> IDafkaConnection::get_subscriber_hosts()
+{
+    std::unique_lock<std::mutex> l(__l);
+    std::vector<drpc_host> hosts;
+    for (Subscriber s : subscribers)
+    {
+        hosts.push_back(s.get_host());
+    }
+    
+    return hosts;
+}
+
+bool IDafkaConnection::has_subscriber(Subscriber &s)
+{
+    std::unique_lock<std::mutex> l(__l);
+    return std::find(subscribers.begin(), subscribers.end(), s) != subscribers.end();
+}
+
 void IDafkaConnection::add_subscriber(dafka_args *da)
 {
+    std::unique_lock<std::mutex> l(__l);
     if (knows_seed(da->seed))
     {
         return;
     }
+    seeds.push_back(da->seed);
+    Subscriber s(da->host);
+    if (has_subscriber(s))
     {
-        std::unique_lock<std::mutex> l(__l);
-        seeds.push_back(da->seed);
-        Subscriber s(da->host);
-        subscribers.push_back(s);
+        return;
     }
+    subscribers.push_back(s);
+    
+    // invoke request function after adding subscriber
+    req_endpoint(srv_ptr, da->payload.data);
 }
 
 void IDafkaConnection::remove_subscriber(dafka_args *da)
 {
+    std::unique_lock<std::mutex> l(__l);
     if (knows_seed(da->seed))
     {
         return;
     }
-    {
-        std::unique_lock<std::mutex> l(__l);
-        seeds.push_back(da->seed);
-        Subscriber s(da->host);
-        subscribers.erase(std::find(subscribers.begin(), subscribers.end(), s));
-    }
+    seeds.push_back(da->seed);
+    Subscriber s(da->host);
+    subscribers.erase(std::find(subscribers.begin(), subscribers.end(), s));
 }
 
 void IDafkaConnection::listen(IDafkaConnection *idc, drpc_msg &m)
@@ -93,6 +129,7 @@ void IDafkaConnection::listen(IDafkaConnection *idc, drpc_msg &m)
         idc->remove_subscriber(da);
         break;
     case DafkaConnectionOp::REQUEST:
+        // this is a noop atm
         idc->stub(da);
         break;
     case DafkaConnectionOp::REPLY:
@@ -106,12 +143,12 @@ void IDafkaConnection::listen(IDafkaConnection *idc, drpc_msg &m)
     dr->status = OK;
 }
 
-int IDafkaConnection::subscribe(drpc_host &remote)
+int IDafkaConnection::subscribe(drpc_host &remote, payload_t &payload)
 {
     StrongDafkaConnection *sdc_ptr = dynamic_cast<StrongDafkaConnection*>(this);
     sdc_ptr->type = DafkaConnectionType::STRONG;
     Subscriber rs(remote);
-    rs.notify(sdc_ptr, DafkaConnectionOp::SUBSCRIBE, payload_t{}.data);
+    rs.notify(sdc_ptr, DafkaConnectionOp::SUBSCRIBE, payload.data);
     return 0;
 }
 

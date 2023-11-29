@@ -49,9 +49,13 @@ int StrongDafkaConnection::notify(drpc_host & remote, DafkaConnectionOp op, payl
 
 int StrongDafkaConnection::stub(dafka_args *args)
 {
-    if (knows_seed(args->seed))
     {
-        return 0;
+        std::unique_lock<std::mutex> l(__l);
+        if (knows_seed(args->seed))
+        {
+            return 0;
+        }
+        seeds.push_back(args->seed);
     }
     
     switch (args->op)

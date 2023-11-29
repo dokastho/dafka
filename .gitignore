@@ -35,5 +35,5 @@ __pycache__
 
 drpc.h
 Channel.h
-test_client
 test_basic
+test_gossip

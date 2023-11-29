@@ -2,6 +2,7 @@
 #include <chrono>
 #include <iostream>
 #include <mutex>
+#include <memory.h>
 
 #include "dafka.h"
 #include "drpc.h"
@@ -58,9 +59,9 @@ int main()
     Host h2(dh, 2);
     Host h3(dh, 3);
 
-    h1.sdc->subscribe(srv_host);
-    h2.sdc->subscribe(srv_host);
-    h3.sdc->subscribe(srv_host);
+    h1.sdc->subscribe(srv_host, p);
+    h2.sdc->subscribe(srv_host, p);
+    h3.sdc->subscribe(srv_host, p);
 
     srv.test_func();
     return 0;
