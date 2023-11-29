@@ -26,7 +26,7 @@ enum class DafkaConnectionOp : char
     REPLY
 };
 
-struct payload
+struct payload_t
 {
     uint8_t data[DATA_LEN];
 };
@@ -37,7 +37,7 @@ struct dafka_args
     drpc_host host;
     DafkaConnectionType type;
     DafkaConnectionOp op;
-    payload data;
+    payload_t payload;
 };
 
 struct dafka_reply

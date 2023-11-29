@@ -66,10 +66,10 @@ public:
     int subscribe(drpc_host &);
 
     // dafka host notifies one connection
-    int notify_one(DafkaConnectionOp, payload &, int);
+    int notify_one(DafkaConnectionOp, payload_t &, int);
 
     // dafka host notifies all connections
-    int notify_all(DafkaConnectionOp, payload &);
+    int notify_all(DafkaConnectionOp, payload_t &);
 
     virtual int stub(dafka_args *) = 0;
 };
@@ -78,7 +78,7 @@ public:
 class StrongDafkaConnection : public IDafkaConnection
 {
 private:
-    int notify(drpc_host &, DafkaConnectionOp, payload &);
+    int notify(drpc_host &, DafkaConnectionOp, payload_t &);
 
     friend class Subscriber;
 
@@ -92,7 +92,7 @@ public:
 class WeakDafkaConnection : public IDafkaConnection
 {
 private:
-    int notify(drpc_host &, DafkaConnectionOp, payload &);
+    int notify(drpc_host &, DafkaConnectionOp, payload_t &);
 
     friend class Subscriber;
 

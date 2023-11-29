@@ -8,7 +8,7 @@ Subscriber::Subscriber(drpc_host &dh) : host(dh) {}
 
 int Subscriber::notify(IDafkaConnection *idc, DafkaConnectionOp op, uint8_t *data)
 {
-    payload p;
+    payload_t p;
     memcpy(p.data, data, DATA_LEN);
 
     StrongDafkaConnection *sdc_ptr;
@@ -134,7 +134,7 @@ int IDafkaConnection::subscribe(drpc_host &remote)
     return 0;
 }
 
-int IDafkaConnection::notify_one(DafkaConnectionOp op, payload &p, int index)
+int IDafkaConnection::notify_one(DafkaConnectionOp op, payload_t &p, int index)
 {
     if (index > (int)subscribers.size())
     {
@@ -148,7 +148,7 @@ int IDafkaConnection::notify_one(DafkaConnectionOp op, payload &p, int index)
     return 0;
 }
 
-int IDafkaConnection::notify_all(DafkaConnectionOp op, payload &p)
+int IDafkaConnection::notify_all(DafkaConnectionOp op, payload_t &p)
 {
     for (Subscriber sub : subscribers)
     {

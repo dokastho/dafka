@@ -17,7 +17,7 @@ WeakDafkaConnection::WeakDafkaConnection(
     type = DafkaConnectionType::WEAK;
 }
 
-int WeakDafkaConnection::notify(drpc_host & remote, DafkaConnectionOp op, payload & data)
+int WeakDafkaConnection::notify(drpc_host & remote, DafkaConnectionOp op, payload_t & payload)
 {
     drpc_client c;
     dafka_reply r{ERR};
@@ -26,7 +26,7 @@ int WeakDafkaConnection::notify(drpc_host & remote, DafkaConnectionOp op, payloa
     da.host = drpc_engine->get_host();
     da.type = type;
     da.op = op;
-    memcpy(da.data.data, data.data, DATA_LEN);
+    memcpy(da.payload.data, payload.data, DATA_LEN);
 
     rpc_arg_wrapper req{(void *)&da, sizeof(da)};
     rpc_arg_wrapper rep{(void *)&r, sizeof(r)};
@@ -39,11 +39,11 @@ int WeakDafkaConnection::stub(dafka_args *args)
     switch (args->op)
     {
     case DafkaConnectionOp::REPLY:
-        rep_endpoint(srv_ptr, args->data.data);
+        rep_endpoint(srv_ptr, args->payload.data);
         break;
 
     case DafkaConnectionOp::REQUEST:
-        req_endpoint(srv_ptr, args->data.data);
+        req_endpoint(srv_ptr, args->payload.data);
         break;
     default:
         return 1;
