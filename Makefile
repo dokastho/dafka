@@ -22,19 +22,22 @@ RPC_LIB = drpc.so
 #Default Flags
 CXXFLAGS = -std=c++14 -Wconversion -Wall -Werror -Wextra -pedantic -pthread
 
+# highest target; sews together all objects into executable
+all: $(LIB) $(TESTS)
+
+fast: CXXFLAGS += -ofast
+fast: clean all
+
 # make debug - will compile "all" with $(CXXFLAGS) and the -g flag
 #              also defines DEBUG so that "#ifdef DEBUG /*...*/ #endif" works
 debug: CXXFLAGS += -g3 -DDEBUG
 debug: clean all
 
-# highest target; sews together all objects into executable
-all: $(LIB) $(TESTS)
-
 test: $(TESTS)
 
 $(LIB): $(OBJECTS)
 	$(CXX) $(CXXFLAGS) $(OBJECTS) -o ${OBJDIR}/$(LIB) $(SO_PATH)/$(RPC_LIB) -shared
-	@ln -f ${OBJDIR}/$(LIB) $(SO_PATH)
+	ln -f ${OBJDIR}/$(LIB) $(SO_PATH)
 
 clean:
 	rm -rf ${OBJDIR} ${BINDIR} 
@@ -45,7 +48,7 @@ headers:
 
 $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.cpp
 	@mkdir -p ${OBJDIR}
-	$(CXX) $(CXXFLAGS) -fPIC -g -c $< -o $@
+	$(CXX) $(CXXFLAGS) -fPIC -c $< -o $@
 
 $(TESTS): $(BINDIR)/% : $(SRCDIR)/%.cpp $(SO_PATH)/$(LIB)
 	@mkdir -p ${BINDIR}
