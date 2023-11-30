@@ -34,6 +34,7 @@ debug: CXXFLAGS += -g3 -DDEBUG
 debug: clean all
 
 test: $(TESTS)
+	@pytest
 
 $(LIB): $(OBJECTS)
 	$(CXX) $(CXXFLAGS) $(OBJECTS) -o ${OBJDIR}/$(LIB) $(SO_PATH)/$(RPC_LIB) -shared

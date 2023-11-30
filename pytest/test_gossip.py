@@ -7,13 +7,13 @@ def run_command(cmd: str):
     return (x & 0xff00) >> 8
 
 
-def test_basic():
+def test_basic_gossip():
     cmd = f'{BINDIR}/test_gossip_basic'
     assert(run_command(cmd) == 0)
     pass
 
 
-def test_adv():
+def test_adv_gossip():
     cmd = f'{BINDIR}/test_gossip_adv'
     assert(run_command(cmd) == 0)
     pass

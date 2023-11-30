@@ -7,7 +7,7 @@ def run_command(cmd: str):
     return (x & 0xff00) >> 8
 
 
-def test_basic():
+def test_basic_dafka():
     cmd = f'{BINDIR}/test_basic'
     assert(run_command(cmd) == 0)
     pass
