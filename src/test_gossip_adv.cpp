@@ -3,10 +3,16 @@
 #include <iostream>
 #include <mutex>
 #include <vector>
+#include <map>
+#include <cassert>
 #include <memory.h>
 
 #include "dafka.h"
 #include "drpc.h"
+
+using std::ostream;
+
+std::map<short, int> host_ports;
 
 typedef std::chrono::milliseconds MS;
 
@@ -18,9 +24,9 @@ class GossipingHost
 {
 private:
     int me = 0;
-    std::vector<drpc_host> pool;
 
 public:
+    friend ostream &operator<<(ostream &out, const GossipingHost &gh);
     StrongDafkaConnection *sdc;
     GossipingHost(drpc_host h, int id)
     {
@@ -34,7 +40,7 @@ public:
         Subscriber rs(remote);
 
         drpc_host my_host = sdc->get_host();
-        if (my_host.hostname == remote.hostname && my_host.port == remote.port)
+        if (my_host == remote)
         {
             return;
         }
@@ -45,12 +51,6 @@ public:
         sdc->subscribe(remote, payload);
 
         std::unique_lock<std::mutex> l(lock);
-        if (std::find(pool.begin(), pool.end(), remote) != pool.end())
-        {
-            return;
-        }
-        
-        pool.push_back(remote);
     }
 
     void spread_gossip()
@@ -77,7 +77,7 @@ public:
 
         drpc_host host;
         memcpy(&host, data, sizeof(host));
-        srv->pool.push_back(host);
+        srv->subscribe_func(host);
     }
 
     drpc_host get_host()
@@ -91,31 +91,73 @@ public:
     }
 };
 
+ostream &operator<<(ostream &out, const GossipingHost &gh)
+{
+    out << gh.me << ":";
+    std::vector<drpc_host> hosts = gh.sdc->get_subscriber_hosts();
+    for (size_t i = 0; i < hosts.size(); i++)
+    {
+        out << " " << host_ports[hosts[i].port];
+    }
+    out << std::endl;
+
+    return out;
+}
+
+void print_info(std::vector<GossipingHost*> &hosts)
+{
+    std::cout << "Host info\n";
+    for (size_t i = 0; i < hosts.size(); i++)
+    {
+        std::cout << *(hosts[i]);
+    }
+    std::cout << std::endl;
+}
+
 int main()
 {
     drpc_host dh{"localhost", 0};
 
-    GossipingHost h1(dh, 1);
-    drpc_host dh1 = h1.get_host();
-    GossipingHost h2(dh, 2);
-    drpc_host dh2 = h2.get_host();
-    // GossipingHost h3(dh, 3);
-    // drpc_host dh3 = h3.get_host();
+    int nhosts = 10;
+    std::vector<GossipingHost *> hosts;
+    std::vector<drpc_host> addrs;
 
-    h1.subscribe_func(dh2);
-    h2.subscribe_func(dh1);
-    // h3.subscribe_func(dh1);
+    for (int i = 0; i < nhosts; i++)
+    {
+        hosts.push_back(new GossipingHost(dh, i));
+        addrs.push_back(hosts.back()->get_host());
+        host_ports[addrs.back().port] = i;
+    }
 
+    for (int i = 0; i < nhosts; i++)
+    {
+        hosts[i]->subscribe_func(addrs[(i + 1) % addrs.size()]);
+    }
 
-    size_t niter = 10;
+    print_info(hosts);
+
+    size_t niter = 5;
 
     for (size_t i = 0; i < niter; i++)
     {
-        h1.spread_gossip();
-        h2.spread_gossip();
-        // h3.spread_gossip();
+        for (int j = 0; j < nhosts; j++)
+        {
+            hosts[j]->spread_gossip();
+        }
+
         std::this_thread::sleep_for(MS(666));
     }
+
+    print_info(hosts);
+
+    for (int i = 0; i < nhosts; i++)
+    {
+        assert((int)hosts[i]->sdc->get_subscriber_hosts().size() == nhosts - 1);
+        delete hosts[i];
+        hosts[i] = nullptr;
+    }
+
+    std::cout << "passed" << std::endl;
 
     return 0;
 }

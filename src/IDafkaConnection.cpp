@@ -8,7 +8,7 @@ Subscriber::Subscriber(drpc_host &dh) : host(dh) {}
 
 int Subscriber::notify(IDafkaConnection *idc, DafkaConnectionOp op, uint8_t *data)
 {
-    payload_t p;
+    payload_t p{{}};
     memcpy(p.data, data, DATA_LEN);
 
     StrongDafkaConnection *sdc_ptr;

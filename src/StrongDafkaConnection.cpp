@@ -22,13 +22,13 @@ int StrongDafkaConnection::notify(drpc_host & remote, DafkaConnectionOp op, payl
 {
     drpc_client c(0, true);
     dafka_reply r{ERR};
-    dafka_args da;
-
-    da.host = drpc_engine->get_host();
-    da.seed = rand();
-    da.type = type;
-    da.op = op;
-    memcpy(da.payload.data, payload.data, DATA_LEN);
+    dafka_args da{
+        rand(),
+        drpc_engine->get_host(),
+        type,
+        op,
+        payload
+    };
 
     rpc_arg_wrapper req{(void *)&da, sizeof(da)};
     rpc_arg_wrapper rep{(void *)&r, sizeof(r)};
