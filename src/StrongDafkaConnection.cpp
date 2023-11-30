@@ -20,7 +20,7 @@ StrongDafkaConnection::StrongDafkaConnection(
 
 int StrongDafkaConnection::notify(drpc_host & remote, DafkaConnectionOp op, payload_t & payload)
 {
-    drpc_client c(0, true);
+    drpc_client c;
     dafka_reply r{ERR};
     dafka_args da{
         rand(),
